@@ -29,7 +29,7 @@ class는 긍정, 부정을 2개이며 각각 분포는 정확히 50:50으로 분
 필요한 패키지는 다음과 같다.
 
 * Konlpy
-* Tensorflow >=
+* Tensorflow
 * Gensim
 * Pandas
 * Numpy
