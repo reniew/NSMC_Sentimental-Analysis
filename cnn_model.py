@@ -18,7 +18,7 @@ def model_fn(features, labels, mode, params):
     input_layer = tf.contrib.layers.embed_sequence(
                     features['text'],
                     vocab_size = vocab_size,
-                    embedding_size=embedding_size,
+                    embed_dim=embedding_size,
                     initializer=params['embedding_initializer']
                     )
     # 현재 모델이 학습모드인지 여부를 확인하는 변수입니다.

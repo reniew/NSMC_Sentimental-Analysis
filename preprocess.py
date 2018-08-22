@@ -10,7 +10,12 @@ from tensorflow.python.keras.preprocessing.text import Tokenizer
 from tensorflow.python.keras.preprocessing import sequence
 
 DEFAULT_PATH='./data/nsmc/'
+ALL_REVIEW = 'ratings.txt'
+TRAIN_REVEIW = 'ratings_train.txt'
+TEST_REVEIW = 'ratings_test.txt'
 
+
+all_review = pd.read_csv(FILE_PATH + ALL_REVIEW, quoting=3, header= 0, delimiter='\t')
 train = pd.read_csv(DEFAULT_PATH+'ratings_train.txt', header=0, delimiter='\t' ,quoting=3 )
 test = pd.read_csv(DEFAULT_PATH+'ratings_test.txt', header=0, delimiter='\t' ,quoting=3)
 
@@ -35,55 +40,52 @@ def preprocessing(review, okt, remove_stopwords = False, stop_words = []):
 
     return word_review
 
+def review_to_clean(clean_list, reviews):
+
+    print('total {0} reviews, processing start'.format(len(reviews)))
+    count = 0clean_review
+    for review in reviews['documremove_stopwords=       if type(review) == str:
+            clean_list.append(preprocessing(review, okt, remove_stopwords = True, stop_words=stop_words))
+        else:
+            clean_list.append([])
+        count = count + 1
+
+        if count % 1000 == 0:
+            print('{0} reviews done'.format(count))
+
+
 stop_words = [ '은', '는', '이', '가', '하', '아', '것', '들','의', '있', '되', '수', '보', '주', '등', '한']
 okt = Okt()
 
 clean_review = []
-clean_review_test = []
+clean_train = []
+clean_test = []
 
-for review in train['document']:
-    # 비어있는 데이터에서 멈추지 않도록 string인 경우만 진행
-    if type(review) == str:
-        clean_review.append(preprocessing(review, okt, remove_stopwords = True, stop_words=stop_words))
-    else:
-        clean_review.append([])
+review_to_clean(clean_list = clean_review, reviews = all_review)
+review_to_clean(clean_list = clean_train, reviews = train)
+review_to_clean(clean_list = clean_test, reviews = test)
 
-for review in test['document']:
-    # 비어있는 데이터에서 멈추지 않도록 string인 경우만 진행
-    if type(review) == str:
-        clean_review_test.append(preprocessing(review, okt, remove_stopwords = True, stop_words=stop_words))
-    else:
-        clean_review_test.append([])
 
 tokenizer = Tokenizer()
 tokenizer.fit_on_texts(clean_review)
-text_sequences = tokenizer.texts_to_sequences(clean_review)
+
+train_sequences = tokenizer.texts_to_sequences(clean_train)
+test_sequences = tokenizer.texts_to_sequences(clean_test)
 
 word_vocab = tokenizer.word_index # 딕셔너리 형태
 print("전체 단어 개수: ", len(word_vocab)) # 전체 단어 개수 확인
 
-MAX_SEQUENCE_LENGTH = 10 # 문장 최대 길이
+MAX_SEQUENCE_LENGTH = 12 # 문장 최대 길이
 
-inputs = pad_sequences(text_sequences, maxlen=MAX_SEQUENCE_LENGTH, padding='post') # 문장의 길이가 50 단어가 넘어가면 자르고, 모자르면 0으로 채워 넣는다.
-labels = np.array(train['label']) # 각 리뷰의 감정을 넘파이 배열로 만든다.
+train_inputs = pad_sequences(train_sequences, maxlen=MAX_SEQUENCE_LENGTH, padding='post')
+train_labels = np.array(train['label'])
 
-print('Shape of input data tensor:', inputs.shape) # 리뷰 데이터의 형태 확인
-print('Shape of label tensor:', labels.shape) # 감정 데이터 형태 확인
+test_inputs = pad_sequences(test_sequences, maxlen=MAX_SEQUENCE_LENGTH, padding='post')
+test_labels = np.array(test['label'])
 
-tokenizer_test = Tokenizer()
-tokenizer_test.fit_on_texts(clean_review_test)
-text_sequences_test = tokenizer_test.texts_to_sequences(clean_review_test)
 
-word_vocab_test = tokenizer_test.word_index # 딕셔너리 형태
-print("전체 단어 개수: ", len(word_vocab_test)) # 전체 단어 개수 확인
+############################################
 
-MAX_SEQUENCE_LENGTH = 10 # 문장 최대 길이
-
-inputs_test = pad_sequences(text_sequences_test, maxlen=MAX_SEQUENCE_LENGTH, padding='post') # 문장의 길이가 50 단어가 넘어가면 자르고, 모자르면 0으로 채워 넣는다.
-labels_test = np.array(test['label']) # 각 리뷰의 감정을 넘파이 배열로 만든다.
-
-print('Shape of input data tensor:', inputs_test.shape) # 리뷰 데이터의 형태 확인
-print('Shape of label tensor:', labels_test.shape) # 감정 데이터 형태 확인
 
 # 경로 및 파일 이름 지정
 FILE_DIR_PATH = './data/'
@@ -110,4 +112,4 @@ np.save(open(FILE_DIR_PATH + INPUT_TEST_DATA_FILE_NAME, 'wb'), inputs_test)
 np.save(open(FILE_DIR_PATH + LABEL_TEST_DATA_FILE_NAME, 'wb'), labels_test)
 
 # 데이터 사전을 json 형태로 저장
-json.dump(word_vocab, open(FILE_DIR_PATH + DATA_CONFIGS_FILE_NAME, 'w'), ensure_ascii=False)
+json.dump(data_configs, open(FILE_DIR_PATH + DATA_CONFIGS_FILE_NAME, 'w'), ensure_ascii=False)
